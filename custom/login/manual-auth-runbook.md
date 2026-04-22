@@ -1,84 +1,59 @@
-# Manual Authentication Runbook
+# Manual Authentication Runbook (3-Domain Method)
 
-This guide explains how to manually authenticate `notebooklm-py` by copying cookies from your browser, bypassing the need for `playwright install chromium`.
+This guide explains how to manually authenticate `notebooklm-py` by copying cookies from your browser headers into text files and merging them using a Python script. This bypasses the need for `playwright install chromium`.
 
-## 1. Extract Cookies from Browser
+## 1. Prepare Cookie Files
 
-You need to extract cookies for `google.com` and `notebooklm.google.com`.
+You will need to create 3 text files in the same directory as your conversion script.
 
-### Option A: Using Browser Extension (Recommended)
-1. Install an extension like **"EditThisCookie"** or **"Cookie-Editor"**.
-2. Go to [notebooklm.google.com](https://notebooklm.google.com) and log in.
-3. Export cookies in **JSON** format.
+### Step 1: Extract from Browser
+1. Go to [notebooklm.google.com](https://notebooklm.google.com) and log in.
+2. Open DevTools (F12) and go to the **Network** tab.
+3. Refresh the page and find requests going to these 3 domains:
+   - `google.com`
+   - `notebooklm.google.com`
+   - `googleusercontent.com` (Check this after playing audio or video)
+4. For each domain, find the **Cookie** header in the **Request Headers** section and copy the entire string.
 
-### Option B: Manual extraction (DevTools)
-1. Open Chrome DevTools (F12) on the NotebookLM page.
-2. Go to the **Application** tab -> **Storage** -> **Cookies**.
-3. You specifically need the `SID`, `HSID`, `SSID`, `APISID`, `SAPISID` cookies from `.google.com`.
+### Step 2: Save to Text Files
+Paste the copied strings into these files respectively:
+- `cookie.google.com.txt`
+- `cookie.notebooklm.google.com.txt`
+- `cookie.googleusercontent.com.txt`
 
-## 2. Prepare the Storage State JSON
+## 2. Convert to storage_state.json
 
-`notebooklm-py` expects the **Playwright Storage State** format. Create a file named `storage_state.json` with this structure:
+Run the provided Python script to merge these files into the required Playwright format.
 
-```json
-{
-  "cookies": [
-    {
-      "name": "SID",
-      "value": "YOUR_SID_VALUE",
-      "domain": ".google.com",
-      "path": "/",
-      "expires": -1,
-      "httpOnly": true,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "HSID",
-      "value": "YOUR_HSID_VALUE",
-      "domain": ".google.com",
-      "path": "/",
-      "expires": -1,
-      "httpOnly": true,
-      "secure": true,
-      "sameSite": "None"
-    }
-  ],
-  "origins": []
-}
-```
-
-> [!IMPORTANT]
-> At minimum, the `SID` cookie is required. It is highly recommended to include all Google authentication cookies for stability.
-
-## 3. Deployment
-
-Choose one of the following methods to apply the tokens:
-
-### Method 1: File-based (Persistent)
-Save the JSON content to:
-- **Windows**: `%USERPROFILE%\.notebooklm\storage_state.json`
-- **Linux/macOS**: `~/.notebooklm/storage_state.json`
-
-### Method 2: Environment Variable (CI/CD Friendly)
-Set the `NOTEBOOKLM_AUTH_JSON` environment variable with the entire JSON string:
-
-**PowerShell:**
-```powershell
-$env:NOTEBOOKLM_AUTH_JSON = '{"cookies": [...]}'
-```
-
-**Bash:**
+### Run Conversion Script:
 ```bash
-export NOTEBOOKLM_AUTH_JSON='{"cookies": [...]}'
+python convert_cookies.py
+```
+This will generate a `storage_state.json` file in the same directory.
+
+## 3. Deployment (Installation)
+
+To make the library recognize your new tokens, follow these steps:
+
+### Step 1: Create Directory Structure
+```bash
+mkdir -p ~/.notebooklm/profiles/default/
+```
+
+### Step 2: Copy the File
+```bash
+cp ./storage_state.json ~/.notebooklm/profiles/default/storage_state.json
 ```
 
 ## 4. Verification
 
-Verify that your manual tokens are working correctly by running:
+Verify that your manual tokens are working correctly:
 
 ```bash
 notebooklm auth check --test
 ```
 
-If successful, you will see "Authentication valid" and your account details.
+### Troubleshooting:
+- **"SID cookie: ✗ fail"**: Check if your `cookie.google.com.txt` contains the `SID` token.
+- **"Token fetch: ✗ fail"**: Your cookies might have expired. Refresh the NotebookLM page and copy the headers again.
+- **Permission Denied**: Ensure you have write access to `~/.notebooklm`.

@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "SID",
+      "value": "YOUR_SID_VALUE",
+      "domain": ".google.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "HSID",
+      "value": "YOUR_HSID_VALUE",
+      "domain": ".google.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": []
+}
